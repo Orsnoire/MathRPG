@@ -2,296 +2,154 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>MathRPG – Student</title>
+  <title>MathRPG – Test Gate</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body{font-family:system-ui,Arial,sans-serif;max-width:640px;margin:40px auto;padding:0 16px}
-    .card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}
-    label{display:block;margin:8px 0 4px}
-    input,button{font-size:16px;padding:8px}
-    button{cursor:pointer}
-    button#resetBtn { background:#f5f5f5; border:1px solid #ccc; }
-
+    body { font-family: system-ui, Arial, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 12px 0; }
+    label { display:block; margin-top: 8px; }
+    input, button { font-size: 16px; padding: 8px; }
+    .hidden { display: none; } /* IMPORTANT: ensure this class exists */
+    .muted { color: #666; font-size: 14px; }
   </style>
 </head>
 <body>
-  <h1>MathRPG – Student</h1>
-<!-- Navigation links -->
-<div class="card">
-  <h2>Navigation</h2>
-  <ul style="list-style:none;padding-left:0;">
-    <li><a href="/" style="text-decoration:none;">🏠 Student Page</a></li>
-    <li><a href="/admin/" style="text-decoration:none;">🧑‍🏫 Teacher Console</a></li>
-    <li><a href="/solo/" style="text-decoration:none;">🎮 Solo Mode</a></li>
-  </ul>
-</div>
-  <!-- Student Login / Join -->
-<div class="card" id="loginCard">
-  <h2>Join Session</h2>
-<div class="card">
-  <h2>Server Test</h2>
-  <button id="pingBtn">Ping AWS</button>
-  <p id="pingResult"></p>
-</div>
+  <h1>MathRPG – Gate Test</h1>
 
-<script>
-  const pingBtn = document.getElementById("pingBtn");
-  pingBtn.onclick = async () => {
-    const resultBox = document.getElementById("pingResult");
-    resultBox.textContent = "Pinging server...";
-    try {
-      const res = await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello");
-      const data = await res.json();
-      resultBox.textContent = data.message + " (" + data.time + ")";
-    } catch (err) {
-      resultBox.textContent = "Error: " + err.message;
-    }
-  };
-</script>
-<script>
-function getAuth() {
-  try {
-    const characterId   = localStorage.getItem('characterId');
-    const playerSecret  = localStorage.getItem('playerSecret');
-    return { characterId, playerSecret };
-  } catch { return { characterId:null, playerSecret:null }; }
-}
+  <!-- Character/Class Select -->
+  <section id="characterSelectView" class="card">
+    <h2>Join a Class</h2>
+    <label>Nickname <input id="nickname" placeholder="e.g., Gideon"></label>
+    <label>Class Code <input id="classCode" placeholder="e.g., MATH-1A"></label>
 
-function shouldAutoStartDemo() {
-  const url = new URL(location.href);
-  return url.searchParams.get('demo') === '1';
-}
+    <div style="margin-top:12px">
+      <button id="joinBtn">Join</button>
+      <button id="demoBtn" type="button">Try Demo</button>
+    </div>
 
-// BLOCK all auto-starts until we know the state:
-document.addEventListener('DOMContentLoaded', () => {
-  const { characterId, playerSecret } = getAuth();
+    <p class="muted" id="selectStatus"></p>
+  </section>
 
-  if (!characterId || !playerSecret) {
-    // Show character/class select and RETURN early.
-    document.querySelector('#characterSelectView')?.classList.remove('hidden');
-    document.querySelector('#gameView')?.classList.add('hidden');
-    return;
-  }
+  <!-- Game View -->
+  <section id="gameView" class="card hidden">
+    <h2>Game View</h2>
+    <p id="gameStatus" class="muted">Waiting to start…</p>
+    <button id="logoutBtn" type="button">Log out</button>
+  </section>
 
-  // Only allow demo autostart if explicitly requested in URL (?demo=1)
-  if (shouldAutoStartDemo()) {
-    startDemo(); // <- your existing demo bootstrap
-    return;
-  }
+  <script>
+    // ---------- UTIL ----------
+    function log(...args){ console.log("[MathRPG]", ...args); }
+    function qs(sel){ return document.querySelector(sel); }
 
-  // Otherwise, proceed to normal authenticated join flow
-  startAuthenticatedClient(characterId, playerSecret);
-});
-</script>
-
-  <div id="loggedOutUI">
-    <label>Class Code</label>
-    <input id="classCode" placeholder="e.g. 3B-Math" />
-    <label>Nickname</label>
-    <input id="nickname" placeholder="Pick a nickname" />
-    <button id="joinBtn">Join</button>
-    <p id="joinMsg" style="margin-top:8px;color:#444"></p>
-  </div>
-
-  <div id="loggedInUI" style="display:none">
-    <p><strong>Status:</strong> Logged in as <span id="whoami"></span></p>
-    <button id="logoutBtn">Log out</button>
-  </div>
-</div>
-<!-- Character Select -->
-<div class="card" id="charSelect" style="display:none">
-  <h2>Choose Your Character</h2>
-  <p style="margin-top:-6px;color:#555">Pick a role to start the adventure.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <button class="charBtn" data-class="Warrior">🛡️ Warrior</button>
-    <button class="charBtn" data-class="Mage">🪄 Mage</button>
-    <button class="charBtn" data-class="Healer">💚 Healer</button>
-  </div>
-  <p id="charMsg" style="margin-top:8px;color:#444"></p>
-</div>
-
-<!-- Demo Encounter (unchanged) -->
-<div class="card" id="demo" style="display:none">
-  <h2>Demo Encounter</h2>
-  <p><strong>Enemy:</strong> Practice Dummy — <span id="enemyHp">50</span> HP</p>
-  <p><strong>Question:</strong> What is 7 + 5 ?</p>
-  <input id="answer" placeholder="Type your answer" />
-  <button id="submitBtn">Submit</button>
-  <button id="resetBtn" style="margin-top:8px;background:#eee;">Reset Demo</button>
-
-  <p id="result"></p>
-</div>
-
-<script>
-  // --- Simple student "auth" (local only) ---
-  const el = (id)=>document.getElementById(id);
-  const KEY = 'mathrpg';
-
-  function readState() {
-    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); }
-    catch { return {}; }
-  }
-  function writeState(s) {
-    localStorage.setItem(KEY, JSON.stringify(s));
-  }
-  function randId() {
-    return 'char_' + Math.random().toString(36).slice(2, 10);
-  }
-
-  function validate(classCode, nickname) {
-    if (!classCode || !nickname) return 'Please fill both fields.';
-    if (nickname.length < 2 || nickname.length > 20) return 'Nickname must be 2–20 characters.';
-    // Loose class code check: letters, numbers, dashes, spaces allowed
-    if (!/^[A-Za-z0-9\- ]{2,20}$/.test(classCode)) return 'Class Code looks off — try letters/numbers/dashes only.';
-    return '';
-  }
-
-  function setLoggedInUI(state) {
-    el('loggedOutUI').style.display = 'none';
-    el('loggedInUI').style.display = 'block';
-    el('whoami').textContent = `${state.nickname} (Class ${state.classCode})`;
-  }
-  function setLoggedOutUI() {
-    el('loggedOutUI').style.display = 'block';
-    el('loggedInUI').style.display = 'none';
-  }
-
-  // Show demo after join
-  function showDemo(state) {
-    document.getElementById('demo').style.display = 'block';
-    // sync HP display
-    if (state.enemyHp != null) el('enemyHp').textContent = state.enemyHp;
-  }
-function showCharSelect() {
-  document.getElementById('charSelect').style.display = 'block';
-}
-function hideCharSelect() {
-  document.getElementById('charSelect').style.display = 'none';
-}
-
-  // Boot
- if (state.nickname && state.classCode) {
-  setLoggedInUI(state);
-  if (state.character?.class) {
-    showDemo(state);
-  } else {
-    showCharSelect();
-  }
-} else {
-  setLoggedOutUI();
-}
-
-
- // Join
-const joinBtn = document.getElementById('joinBtn');
-if (joinBtn) {
-  joinBtn.onclick = async () => {
-    const classCode = el('classCode').value.trim();
-    const nickname = el('nickname').value.trim();
-
-    // basic validation
-    const error = validate(classCode, nickname);
-    if (error) { el('joinMsg').textContent = error; return; }
-
-    el('joinMsg').textContent = "Connecting to server...";
-
-    try {
-      const res = await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classCode, nickname })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        const creds = {
-          classCode,
-          nickname,
-          playerId: data.playerId,
-          hp: 20,
-          enemyHp: 50
+    function getAuth() {
+      try {
+        return {
+          characterId:  localStorage.getItem('characterId'),
+          playerSecret: localStorage.getItem('playerSecret'),
         };
-        writeState(creds);
-        Object.assign(state, creds);
-        setLoggedInUI(state);
-el('joinMsg').textContent = data.message + " (Connected ✅)";
-if (state.character?.class) {
-  showDemo(state);
-} else {
-  showCharSelect();
-}
-
-      } else {
-        el('joinMsg').textContent = "Login failed. Try again.";
-      }
-    } catch (err) {
-      el('joinMsg').textContent = "Connection error: " + err.message;
+      } catch { return { characterId:null, playerSecret:null }; }
     }
-  };
-}
-// Character select handler
-document.querySelectorAll('.charBtn').forEach(btn => {
-  btn.onclick = async () => {
-    const chosen = btn.getAttribute('data-class'); // "Warrior" | "Mage" | "Healer"
-    const s = readState();
-    // Save locally
-    s.character = { class: chosen };
-    writeState(s);
-    el('charMsg').textContent = `Chosen: ${chosen}. Loading demo...`;
-    hideCharSelect();
-    showDemo(s);
+    function setAuth({ characterId, playerSecret }) {
+      localStorage.setItem('characterId', characterId);
+      localStorage.setItem('playerSecret', playerSecret);
+    }
+    function clearAuth() {
+      localStorage.removeItem('characterId');
+      localStorage.removeItem('playerSecret');
+    }
+    function shouldAutoStartDemo() {
+      const url = new URL(location.href);
+      return url.searchParams.get('demo') === '1';
+    }
+    function showSelect() { qs('#characterSelectView').classList.remove('hidden'); qs('#gameView').classList.add('hidden'); }
+    function showGame()   { qs('#characterSelectView').classList.add('hidden');   qs('#gameView').classList.remove('hidden'); }
 
-    // OPTIONAL: log choice to AWS
-    try {
-      await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "chooseCharacter",
-          playerId: s.playerId,
-          classCode: s.classCode,
-          nickname: s.nickname,
-          characterClass: chosen
-        })
+    // ---------- MOCK BACKEND (replace with your real calls) ----------
+    async function createOrFetchCharacter({ nickname, classCode }) {
+      log("createOrFetchCharacter()", { nickname, classCode });
+      // Simulate server success (replace with fetch to your API)
+      await new Promise(r => setTimeout(r, 200));
+      if (!nickname || !classCode) throw new Error("Missing fields");
+      return { characterId: `char_${Date.now()}`, playerSecret: `sec_${Math.random().toString(36).slice(2)}` };
+    }
+
+    // Replace these with your real bootstrap functions
+    function startDemo(){
+      log("startDemo() called");
+      qs('#gameStatus').textContent = "Demo started (placeholder).";
+      showGame();
+    }
+    function startAuthenticatedClient(characterId, playerSecret){
+      log("startAuthenticatedClient()", { characterId, playerSecret });
+      qs('#gameStatus').textContent = `Joined as ${characterId} (placeholder client).`;
+      showGame();
+      // TODO: open your websocket / init your real client here
+    }
+
+    function sendLogoutBeacon(){
+      const { characterId, playerSecret } = getAuth();
+      if (!characterId || !playerSecret) return;
+      log("sendLogoutBeacon()", { characterId });
+      // Replace with your real endpoint
+      try {
+        const payload = JSON.stringify({ characterId, playerSecret });
+        navigator.sendBeacon('/api/logout', new Blob([payload], { type: 'application/json' }));
+      } catch (e) { /* ignore */ }
+    }
+
+    // ---------- EVENT WIRING ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      log("DOMContentLoaded");
+      const { characterId, playerSecret } = getAuth();
+
+      // Wire buttons
+      qs('#joinBtn').addEventListener('click', async () => {
+        try {
+          const nickname  = qs('#nickname').value.trim();
+          const classCode = qs('#classCode').value.trim();
+          if (!nickname || !classCode) {
+            qs('#selectStatus').textContent = "Enter both nickname and class code.";
+            return;
+          }
+          qs('#selectStatus').textContent = "Joining…";
+          const creds = await createOrFetchCharacter({ nickname, classCode });
+          setAuth(creds);
+          qs('#selectStatus').textContent = "Join successful. Starting…";
+          startAuthenticatedClient(creds.characterId, creds.playerSecret);
+        } catch (e) {
+          log("Join failed:", e);
+          qs('#selectStatus').textContent = "Join failed. See console.";
+        }
       });
-    } catch {}
-  };
-});
 
-  // Logout / reset
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) logoutBtn.onclick = () => {
-    localStorage.removeItem(KEY);
-    setLoggedOutUI();
-    document.getElementById('demo').style.display = 'none';
-    el('joinMsg').textContent = 'Logged out. Enter Class Code + Nickname to join again.';
-  };
+      qs('#demoBtn').addEventListener('click', () => {
+        startDemo();
+      });
 
-  // --- Demo logic (unchanged from earlier) ---
-  const submitBtn = document.getElementById('submitBtn');
-  if (submitBtn) submitBtn.onclick = () => {
-    const s = readState();
-    const a = el('answer').value.trim();
-    if (a === '12') {
-      s.enemyHp = Math.max(0, (s.enemyHp ?? 50) - 10);
-      el('enemyHp').textContent = s.enemyHp;
-      el('result').textContent = 'Correct! You dealt 10 damage.';
-    } else {
-      el('result').textContent = 'Miss! Try again.';
-    }
-    writeState(s);
-    if (s.enemyHp === 0) el('result').textContent = 'Victory! The dummy is defeated.';
-  };
-  // Reset button: restore enemy HP and clear messages
-const resetBtn = document.getElementById('resetBtn');
-if (resetBtn) resetBtn.onclick = () => {
-  const s = readState();
-  s.enemyHp = 50;
-  writeState(s);
-  el('enemyHp').textContent = s.enemyHp;
-  el('answer').value = '';
-  el('result').textContent = 'Demo reset! The Practice Dummy is ready.';
-};
+      qs('#logoutBtn').addEventListener('click', () => {
+        sendLogoutBeacon();
+        clearAuth();
+        showSelect();
+        qs('#selectStatus').textContent = "Logged out.";
+        qs('#gameStatus').textContent = "Waiting to start…";
+      });
 
-</script>
+      // Gate on load
+      if (!characterId || !playerSecret) {
+        log("No auth found → show select");
+        showSelect();
+        if (shouldAutoStartDemo()) startDemo();
+        return;
+      }
+
+      log("Auth found on load → start client");
+      startAuthenticatedClient(characterId, playerSecret);
+    });
+
+    // ---------- LOG OUT ON CLOSE ----------
+    window.addEventListener('pagehide', () => { sendLogoutBeacon(); clearAuth(); });
+    window.addEventListener('beforeunload', () => { sendLogoutBeacon(); clearAuth(); });
+  </script>
+</body>
+</html>
