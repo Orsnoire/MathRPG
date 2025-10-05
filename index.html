@@ -26,6 +26,26 @@
   <!-- Student Login / Join -->
 <div class="card" id="loginCard">
   <h2>Join Session</h2>
+<div class="card">
+  <h2>Server Test</h2>
+  <button id="pingBtn">Ping AWS</button>
+  <p id="pingResult"></p>
+</div>
+
+<script>
+  const pingBtn = document.getElementById("pingBtn");
+  pingBtn.onclick = async () => {
+    const resultBox = document.getElementById("pingResult");
+    resultBox.textContent = "Pinging server...";
+    try {
+      const res = await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello");
+      const data = await res.json();
+      resultBox.textContent = data.message + " (" + data.time + ")";
+    } catch (err) {
+      resultBox.textContent = "Error: " + err.message;
+    }
+  };
+</script>
 
   <div id="loggedOutUI">
     <label>Class Code</label>
