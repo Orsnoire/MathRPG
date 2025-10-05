@@ -4,19 +4,71 @@
   <meta charset="utf-8" />
   <title>MathRPG – Teacher Console</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>body{font-family:system-ui,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}
-  .card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}</style>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}
+    .card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}
+    input,button{font-size:16px;padding:8px}
+    button{cursor:pointer}
+  </style>
 </head>
 <body>
-  <h1>Teacher Console (placeholder)</h1>
-  <div class="card">
-    <p>This is a static page for now. Once we wire AWS, buttons here will start and reveal rounds.</p>
-    <ul>
-      <li>Create/Start session</li>
-      <li>Reveal answers</li>
-      <li>Adjust HP / Grant loot</li>
-    </ul>
-    <p>For now: load the student page and try the demo question.</p>
+  <h1>Teacher Console</h1>
+
+  <div class="card" id="loginCard">
+    <h2>Teacher Login</h2>
+    <p>Enter PIN to continue.</p>
+    <input id="pin" type="password" placeholder="PIN" />
+    <button id="pinBtn">Unlock</button>
+    <p id="pinMsg" style="margin-top:8px;color:#444"></p>
   </div>
+
+  <div class="card" id="console" style="display:none">
+    <h2>Controls</h2>
+    <p><strong>Status:</strong> Unlocked</p>
+    <button id="startBtn">Start Round</button>
+    <button id="revealBtn">Reveal Answers</button>
+    <button id="lockBtn">Lock Submissions</button>
+    <p id="status" style="margin-top:8px;"></p>
+    <hr />
+    <p><em>Note:</em> This is a local MVP. Once we add a backend, these will send real commands.</p>
+  </div>
+
+  <script>
+    // CHANGE THIS before/after you commit
+    const TEACHER_PIN = '7425'; // <— set your own
+
+    const KEY = 'mathrpg_admin';
+    const el = (id)=>document.getElementById(id);
+
+    function isUnlocked() {
+      return localStorage.getItem(KEY) === 'ok';
+    }
+    function showConsole() {
+      el('loginCard').style.display = 'none';
+      el('console').style.display = 'block';
+    }
+    function showLogin() {
+      el('loginCard').style.display = 'block';
+      el('console').style.display = 'none';
+    }
+
+    // boot
+    if (isUnlocked()) showConsole(); else showLogin();
+
+    el('pinBtn').onclick = () => {
+      const tried = el('pin').value.trim();
+      if (tried === TEACHER_PIN) {
+        localStorage.setItem(KEY, 'ok');
+        showConsole();
+      } else {
+        el('pinMsg').textContent = 'Incorrect PIN.';
+      }
+    };
+
+    // fake buttons (MVP only)
+    el('startBtn').onclick = () => el('status').textContent = 'Round started (local-only for now).';
+    el('revealBtn').onclick = () => el('status').textContent = 'Answers revealed (local-only).';
+    el('lockBtn').onclick = () => el('status').textContent = 'Submissions locked (local-only).';
+  </script>
 </body>
 </html>
