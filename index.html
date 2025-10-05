@@ -48,6 +48,41 @@
     }
   };
 </script>
+<script>
+function getAuth() {
+  try {
+    const characterId   = localStorage.getItem('characterId');
+    const playerSecret  = localStorage.getItem('playerSecret');
+    return { characterId, playerSecret };
+  } catch { return { characterId:null, playerSecret:null }; }
+}
+
+function shouldAutoStartDemo() {
+  const url = new URL(location.href);
+  return url.searchParams.get('demo') === '1';
+}
+
+// BLOCK all auto-starts until we know the state:
+document.addEventListener('DOMContentLoaded', () => {
+  const { characterId, playerSecret } = getAuth();
+
+  if (!characterId || !playerSecret) {
+    // Show character/class select and RETURN early.
+    document.querySelector('#characterSelectView')?.classList.remove('hidden');
+    document.querySelector('#gameView')?.classList.add('hidden');
+    return;
+  }
+
+  // Only allow demo autostart if explicitly requested in URL (?demo=1)
+  if (shouldAutoStartDemo()) {
+    startDemo(); // <- your existing demo bootstrap
+    return;
+  }
+
+  // Otherwise, proceed to normal authenticated join flow
+  startAuthenticatedClient(characterId, playerSecret);
+});
+</script>
 
   <div id="loggedOutUI">
     <label>Class Code</label>
