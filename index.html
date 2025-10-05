@@ -63,6 +63,17 @@
     <button id="logoutBtn">Log out</button>
   </div>
 </div>
+<!-- Character Select -->
+<div class="card" id="charSelect" style="display:none">
+  <h2>Choose Your Character</h2>
+  <p style="margin-top:-6px;color:#555">Pick a role to start the adventure.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="charBtn" data-class="Warrior">🛡️ Warrior</button>
+    <button class="charBtn" data-class="Mage">🪄 Mage</button>
+    <button class="charBtn" data-class="Healer">💚 Healer</button>
+  </div>
+  <p id="charMsg" style="margin-top:8px;color:#444"></p>
+</div>
 
 <!-- Demo Encounter (unchanged) -->
 <div class="card" id="demo" style="display:none">
@@ -116,15 +127,25 @@
     // sync HP display
     if (state.enemyHp != null) el('enemyHp').textContent = state.enemyHp;
   }
+function showCharSelect() {
+  document.getElementById('charSelect').style.display = 'block';
+}
+function hideCharSelect() {
+  document.getElementById('charSelect').style.display = 'none';
+}
 
   // Boot
-  const state = readState();
-  if (state.nickname && state.classCode) {
-    setLoggedInUI(state);
+ if (state.nickname && state.classCode) {
+  setLoggedInUI(state);
+  if (state.character?.class) {
     showDemo(state);
   } else {
-    setLoggedOutUI();
+    showCharSelect();
   }
+} else {
+  setLoggedOutUI();
+}
+
 
  // Join
 const joinBtn = document.getElementById('joinBtn');
@@ -159,8 +180,13 @@ if (joinBtn) {
         writeState(creds);
         Object.assign(state, creds);
         setLoggedInUI(state);
-        el('joinMsg').textContent = data.message + " (Connected ✅)";
-        showDemo(state);
+el('joinMsg').textContent = data.message + " (Connected ✅)";
+if (state.character?.class) {
+  showDemo(state);
+} else {
+  showCharSelect();
+}
+
       } else {
         el('joinMsg').textContent = "Login failed. Try again.";
       }
@@ -169,6 +195,34 @@ if (joinBtn) {
     }
   };
 }
+// Character select handler
+document.querySelectorAll('.charBtn').forEach(btn => {
+  btn.onclick = async () => {
+    const chosen = btn.getAttribute('data-class'); // "Warrior" | "Mage" | "Healer"
+    const s = readState();
+    // Save locally
+    s.character = { class: chosen };
+    writeState(s);
+    el('charMsg').textContent = `Chosen: ${chosen}. Loading demo...`;
+    hideCharSelect();
+    showDemo(s);
+
+    // OPTIONAL: log choice to AWS
+    try {
+      await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "chooseCharacter",
+          playerId: s.playerId,
+          classCode: s.classCode,
+          nickname: s.nickname,
+          characterClass: chosen
+        })
+      });
+    } catch {}
+  };
+});
 
   // Logout / reset
   const logoutBtn = document.getElementById('logoutBtn');
