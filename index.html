@@ -10,6 +10,8 @@
     label{display:block;margin:8px 0 4px}
     input,button{font-size:16px;padding:8px}
     button{cursor:pointer}
+    button#resetBtn { background:#f5f5f5; border:1px solid #ccc; }
+
   </style>
 </head>
 <body>
@@ -69,6 +71,8 @@
   <p><strong>Question:</strong> What is 7 + 5 ?</p>
   <input id="answer" placeholder="Type your answer" />
   <button id="submitBtn">Submit</button>
+  <button id="resetBtn" style="margin-top:8px;background:#eee;">Reset Demo</button>
+
   <p id="result"></p>
 </div>
 
@@ -167,4 +171,15 @@
     writeState(s);
     if (s.enemyHp === 0) el('result').textContent = 'Victory! The dummy is defeated.';
   };
+  // Reset button: restore enemy HP and clear messages
+const resetBtn = document.getElementById('resetBtn');
+if (resetBtn) resetBtn.onclick = () => {
+  const s = readState();
+  s.enemyHp = 50;
+  writeState(s);
+  el('enemyHp').textContent = s.enemyHp;
+  el('answer').value = '';
+  el('result').textContent = 'Demo reset! The Practice Dummy is ready.';
+};
+
 </script>
