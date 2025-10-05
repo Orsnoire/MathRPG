@@ -1,206 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
+  <title>MathRPG – Student</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Math RPG – Tiny Demo</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; background:#0f1221; color:#e8ecff; }
-    header { padding: 16px; background:#171a2f; border-bottom:1px solid #2a2f55; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
-    .card { background:#12152a; border:1px solid #2a2f55; border-radius:12px; padding:16px; margin:12px 0; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-    .grow { flex:1 }
-    button { background:#5865f2; color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    input, select { padding:10px; border-radius:8px; border:1px solid #2a2f55; background:#0c0f24; color:#e8ecff; }
-    .bar { height:18px; background:#1b2042; border-radius:999px; overflow:hidden; }
-    .bar > div { height:100%; background:#21d19f; width:50%; transition: width .3s; }
-    .boss .bar>div { background:#e05d5d; }
-    .party .bar>div { background:#f0b429; }
-    .me .bar>div { background:#4cc3ff; }
-    .role-chip { font-size:12px; padding:4px 8px; border-radius:999px; background:#23284b; border:1px solid #2f3564; }
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; }
-    .modal .content { background:#0e1333; border:1px solid #2a2f55; border-radius:12px; padding:16px; width:min(520px, 92vw); }
-    .enemy, .ally { display:flex; align-items:center; gap:8px; padding:8px; border-radius:8px; border:1px solid #2a2f55; margin:6px 0; }
-    .mini { height:10px; background:#1b2042; border-radius:999px; overflow:hidden; flex:1; }
-    .mini > div { height:100%; width:70%; background:#e05d5d; }
+    body{font-family:system-ui,Arial,sans-serif;max-width:640px;margin:40px auto;padding:0 16px}
+    .card{border:1px solid #ddd;border-radius:12px;padding:16px;margin:12px 0}
+    label{display:block;margin:8px 0 4px}
+    input,button{font-size:16px;padding:8px}
+    button{cursor:pointer}
   </style>
 </head>
 <body>
-<header><div class="wrap"><strong>Math RPG</strong> — tiny demo</div></header>
-<main class="wrap">
-  <!-- Join -->
-  <section class="card" id="joinCard">
-    <div class="row">
-      <input id="nick" placeholder="Nickname" />
-      <select id="role">
-        <option value="TANK">Tank</option>
-        <option value="DPS_PHYS">DPS (Physical)</option>
-        <option value="DPS_MAGIC">DPS (Magic)</option>
-        <option value="HEALER">Healer</option>
-      </select>
-      <button id="joinBtn">Join</button>
-    </div>
-  </section>
+  <h1>MathRPG – Student</h1>
 
-  <!-- HUD -->
-  <section class="card" id="hud" style="display:none">
-    <div class="row">
-      <div class="role-chip" id="who"></div>
-      <div class="grow"></div>
-      <button id="prepBtn">Prep</button>
-    </div>
-    <div class="row">
-      <div class="grow me">
-        <div>My HP</div>
-        <div class="bar"><div id="myHp" style="width:100%"></div></div>
-      </div>
-      <div class="grow party">
-        <div>Party HP</div>
-        <div class="bar"><div id="partyHp" style="width:90%"></div></div>
-      </div>
-      <div class="grow boss">
-        <div>Boss HP</div>
-        <div class="bar"><div id="bossHp" style="width:70%"></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Question -->
-  <section class="card" id="question" style="display:none">
-    <div><strong id="qText">What is 3/5 of 40?</strong></div>
-    <div class="row" style="margin-top:8px">
-      <button class="ans">24</button>
-      <button class="ans">20</button>
-      <button class="ans">18</button>
-      <button class="ans">16</button>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button id="tankAct" style="display:none">Tank: Protect</button>
-      <button id="healAct" style="display:none">Healer: Heal</button>
-      <button id="finisher" disabled>Finisher (Combo 0/3)</button>
-    </div>
-  </section>
-</main>
-
-<!-- Modals -->
-<div class="modal" id="targetModal">
-  <div class="content">
-    <h3 id="modalTitle">Choose a target</h3>
-    <div id="targets"></div>
-    <div style="text-align:right;margin-top:12px">
-      <button onclick="closeModal()">Close</button>
-    </div>
+  <div class="card">
+    <h2>Join Session</h2>
+    <label>Class Code</label>
+    <input id="classCode" placeholder="e.g. 3B-Math" />
+    <label>Nickname</label>
+    <input id="nickname" placeholder="Pick a nickname" />
+    <button id="joinBtn">Join</button>
+    <p id="joinMsg"></p>
   </div>
-</div>
 
-<script>
-  // teeny fake game state for the demo
-  const state = {
-    player: { nick:'', role:'', hp:10, combo:0 },
-    party: { hp:40, max:40 },
-    boss: { hp:300, max:300 },
-    enemies: [
-      { id:'rat1', name:'Ratling A', hp:80, max:80 },
-      { id:'rat2', name:'Ratling B', hp:80, max:80 },
-      { id:'brute', name:'Rat Brute', hp:140, max:140 }
-    ],
-    allies:[
-      { id:'you', name:'You', hp:10, max:10, role:'SELF' },
-      { id:'ally1', name:'DPS_Jo', hp:8, max:10, role:'DPS' },
-      { id:'ally2', name:'Tank_Rae', hp:6, max:12, role:'TANK' }
-    ]
-  };
+  <div class="card" id="demo" style="display:none">
+    <h2>Demo Encounter</h2>
+    <p><strong>Enemy:</strong> Practice Dummy — <span id="enemyHp">50</span> HP</p>
+    <p><strong>Question:</strong> What is 7 + 5 ?</p>
+    <input id="answer" placeholder="Type your answer" />
+    <button id="submitBtn">Submit</button>
+    <p id="result"></p>
+  </div>
 
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+  <script>
+    const state = JSON.parse(localStorage.getItem('mathrpg')||'{}');
+    const el = (id)=>document.getElementById(id);
 
-  function setBar(el, cur, max) {
-    el.style.width = Math.max(0, Math.min(100, (cur/max)*100)) + '%';
-  }
-
-  function render() {
-    $('#who').textContent = `${state.player.nick} — ${state.player.role}`;
-    setBar($('#myHp'), state.player.hp, 10);
-    setBar($('#partyHp'), state.party.hp, state.party.max);
-    setBar($('#bossHp'), state.boss.hp, state.boss.max);
-    $('#finisher').textContent = `Finisher (Combo ${state.player.combo}/3)`;
-    $('#finisher').disabled = state.player.combo < 3;
-    // role buttons
-    $('#tankAct').style.display = state.player.role==='TANK' ? '' : 'none';
-    $('#healAct').style.display = state.player.role==='HEALER' ? '' : 'none';
-  }
-
-  // join
-  $('#joinBtn').onclick = () => {
-    const nick = $('#nick').value.trim() || 'Hero';
-    const role = $('#role').value;
-    state.player.nick = nick; state.player.role = role;
-    $('#joinCard').style.display = 'none';
-    $('#hud').style.display = '';
-    $('#question').style.display = '';
-    render();
-  };
-
-  // answer buttons (fake grading: only "24" is correct)
-  $$('.ans').forEach(btn => btn.onclick = () => {
-    const correct = btn.textContent === '24';
-    if (correct) {
-      // give small damage and combo
-      const dmg = 12; // just for demo
-      state.boss.hp = Math.max(0, state.boss.hp - dmg);
-      state.player.combo = Math.min(3, state.player.combo + 1);
-    } else {
-      state.player.combo = 0;
-      // fake enemy hits you
-      state.player.hp = Math.max(0, state.player.hp - 2);
-      state.party.hp = Math.max(0, state.party.hp - 2);
+    function showDemo() {
+      document.getElementById('demo').style.display = 'block';
+      el('joinMsg').textContent = `Joined as ${state.nickname} in class ${state.classCode}.`;
     }
-    render();
-  });
 
-  // tank action: choose enemy to protect against (demo only)
-  $('#tankAct').onclick = () => {
-    openModal('Choose enemy to build threat on', state.enemies.map(e => ({
-      label: `${e.name} (${e.hp}/${e.max})`,
-      onClick: () => { /* no real logic yet */ closeModal(); }
-    })));
-  };
+    if (state.nickname && state.classCode) showDemo();
 
-  // healer action: choose ally to heal
-  $('#healAct').onclick = () => {
-    openModal('Choose ally to heal', state.allies.map(a => ({
-      label: `${a.name} — HP ${a.hp}/${a.max}`,
-      onClick: () => { a.hp = Math.min(a.max, a.hp + 2); render(); closeModal(); }
-    })));
-  };
+    el('joinBtn').onclick = () => {
+      const classCode = el('classCode').value.trim();
+      const nickname = el('nickname').value.trim();
+      if (!classCode || !nickname) { el('joinMsg').textContent = 'Please fill both fields.'; return; }
+      localStorage.setItem('mathrpg', JSON.stringify({ classCode, nickname, hp: 20, enemyHp: 50 }));
+      Object.assign(state, { classCode, nickname, hp: 20, enemyHp: 50 });
+      showDemo();
+    };
 
-  // finisher
-  $('#finisher').onclick = () => {
-    if (state.player.combo >= 3) {
-      state.boss.hp = Math.max(0, state.boss.hp - 50); // big hit, demo
-      state.player.combo = 0;
-      render();
-    }
-  };
+    el('submitBtn').onclick = () => {
+      const a = el('answer').value.trim();
+      if (a === '12') {
+        state.enemyHp = Math.max(0, (state.enemyHp ?? 50) - 10);
+        el('enemyHp').textContent = state.enemyHp;
+        el('result').textContent = 'Correct! You dealt 10 damage.';
+      } else {
+        el('result').textContent = 'Miss! Try again.';
+      }
+      localStorage.setItem('mathrpg', JSON.stringify(state));
+      if (state.enemyHp === 0) el('result').textContent = 'Victory! The dummy is defeated.';
+    };
 
-  // prep (just a placeholder)
-  $('#prepBtn').onclick = () => alert('Prep phase would open equipment & vanity here.');
-
-  function openModal(title, items) {
-    $('#modalTitle').textContent = title;
-    const wrap = $('#targets'); wrap.innerHTML = '';
-    items.forEach(it => {
-      const row = document.createElement('div');
-      row.className = 'enemy';
-      row.innerHTML = `<div>${it.label}</div><div style="margin-left:auto"><button>Select</button></div>`;
-      row.querySelector('button').onclick = it.onClick;
-      wrap.appendChild(row);
-    });
-    $('#targetModal').style.display = 'flex';
-  }
-  function closeModal(){ $('#targetModal').style.display = 'none'; }
-</script>
+    if (state.enemyHp != null) el('enemyHp').textContent = state.enemyHp;
+  </script>
 </body>
 </html>
