@@ -129,8 +129,36 @@
   // Join
   const joinBtn = document.getElementById('joinBtn');
   if (joinBtn) joinBtn.onclick = () => {
-    const classCode = el('classCode').value.trim();
-    const nickname = el('nickname').value.trim();
+   el('joinMsg').textContent = "Connecting to server...";
+(async () => {
+  try {
+    const res = await fetch("https://o8eluyge54.execute-api.us-east-2.amazonaws.com/default/mathrpg-hello", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ classCode, nickname })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const creds = {
+        classCode,
+        nickname,
+        playerId: data.playerId,
+        hp: 20,
+        enemyHp: 50
+      };
+      localStorage.setItem('mathrpg', JSON.stringify(creds));
+      Object.assign(state, creds);
+      el('joinMsg').textContent = data.message + " (Connected ✅)";
+      showDemo();
+    } else {
+      el('joinMsg').textContent = "Login failed. Try again.";
+    }
+  } catch (err) {
+    el('joinMsg').textContent = "Connection error: " + err.message;
+  }
+})();
+
     const error = validate(classCode, nickname);
     if (error) { el('joinMsg').textContent = error; return; }
 
